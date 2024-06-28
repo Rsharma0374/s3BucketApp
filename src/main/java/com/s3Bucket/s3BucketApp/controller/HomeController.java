@@ -46,9 +46,9 @@ public class HomeController {
     }
 
 
-    @GetMapping("/downloadFileWithIamRole/{fileName}")
-    public String downloadFileWithIamRole(@PathVariable String fileName) {
-        String data = storageService.downloadFileWithIamRole(fileName);
+    @GetMapping("/get-pre-signed-url/{fileName}")
+    public String getPreSignedUrl(@PathVariable String fileName) {
+        String data = storageService.getPreSignedUrl(fileName);
 
         return data;
     }

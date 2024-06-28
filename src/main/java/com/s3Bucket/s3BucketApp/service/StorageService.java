@@ -9,5 +9,5 @@ public interface StorageService {
 
     String deleteFile(String fileName);
 
-    String downloadFileWithIamRole(String fileName);
+    String getPreSignedUrl(String fileName);
 }
