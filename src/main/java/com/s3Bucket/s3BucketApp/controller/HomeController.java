@@ -46,5 +46,11 @@ public class HomeController {
     }
 
 
+    @GetMapping("/downloadFileWithIamRole/{fileName}")
+    public String downloadFileWithIamRole(@PathVariable String fileName) {
+        String data = storageService.downloadFileWithIamRole(fileName);
+
+        return data;
+    }
 
 }
