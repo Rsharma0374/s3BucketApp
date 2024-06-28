@@ -96,8 +96,8 @@ public class StorageServiceImpl implements StorageService {
     @Override
     public String getPreSignedUrl(String fileName) {
         try {
-            String bucketName = "your-bucket-name";
-            String objectKey = "your-object-key";
+            String bucketName = "mys3bucketjava";
+            String objectKey = "HDFC_CD_REGRESSION_27Mar_24.apk";
             Region region = Region.AP_SOUTH_1; // Specify your region
 
             // Create S3 Presigner using the default credential provider chain
