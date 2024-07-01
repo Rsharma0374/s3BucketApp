@@ -1,17 +1,27 @@
 package com.s3Bucket.s3BucketApp.service.impl;
 
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.InstanceProfileCredentialsProvider;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.amazonaws.util.IOUtils;
 import com.s3Bucket.s3BucketApp.service.StorageService;
+import io.micrometer.common.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -129,6 +139,71 @@ public class StorageServiceImpl implements StorageService {
         } catch (Exception e) {
             log.error("Exception occurred while getting file with cause - ", e);
             return "exception occurred";
+        }
+    }
+
+    @Override
+    public String  uploadApkS3(File file, String uploadS3Request) {
+        log.debug("Inside upload Apk s3 service.");
+        String baseResponse;
+        try {
+
+                baseResponse = uploadApk(uploadS3Request, file);
+
+        } catch (Exception e) {
+            log.error("Exception occurred while upload apk to s3 with probable cause - ", e);
+            return "Internal server error at uploadApkS3 method.";
+        }
+
+        return baseResponse;
+    }
+
+    private String uploadApk(String s3UploadRequest, File file) {
+
+        try {
+            AmazonS3 amazonS3 = buildAmazonS3Client(null, null);
+
+            if (null == amazonS3) {
+                log.error("Amazon s3 building failed");
+                return "Internal server error at uploadApkS3 -> uploadApk method.";
+            }
+
+            PutObjectResult result = amazonS3.putObject(new PutObjectRequest("mys3bucketjava", "HDFC_CD_REGRESSION_27Mar_24.apk", file));
+            if (null != result && StringUtils.isNotBlank(result.getETag())) {
+                return "Upload success.";
+            } else {
+                return "Upload Failed.";
+            }
+
+
+        } catch (Exception e) {
+            return "Internal server error at uploadApkS3 -> uploadApk -> exception method.";
+        }
+    }
+
+    private AmazonS3 buildAmazonS3Client(String accessKey, String secretKey) {
+        try {
+            AmazonS3ClientBuilder amazonS3ClientBuilder = AmazonS3ClientBuilder.standard();
+
+            ClientConfiguration clientConfiguration = new ClientConfiguration();
+            clientConfiguration.setSocketTimeout(30000);
+            clientConfiguration.disableSocketProxy();
+            amazonS3ClientBuilder.withClientConfiguration(clientConfiguration);
+
+            if (StringUtils.isNotBlank(accessKey) && StringUtils.isNotBlank(secretKey)) {
+                AWSCredentials credentials = new BasicAWSCredentials(accessKey, secretKey);
+                amazonS3ClientBuilder.withCredentials(new AWSStaticCredentialsProvider(credentials));
+            } else {
+                amazonS3ClientBuilder.withCredentials(new InstanceProfileCredentialsProvider(false));
+            }
+
+            amazonS3ClientBuilder.setRegion(Regions.AP_SOUTH_1.getName());
+
+            return amazonS3ClientBuilder.build();
+
+        } catch (Exception e) {
+            log.error("Exception occurred while building s3 connection with probable cause ", e);
+            return null;
         }
     }
 }

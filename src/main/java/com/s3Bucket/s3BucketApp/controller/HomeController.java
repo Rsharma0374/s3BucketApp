@@ -1,12 +1,19 @@
 package com.s3Bucket.s3BucketApp.controller;
 
 import com.s3Bucket.s3BucketApp.service.StorageService;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StopWatch;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/s3bucket")
@@ -51,6 +58,54 @@ public class HomeController {
         String data = storageService.getPreSignedUrl(fileName);
 
         return data;
+    }
+
+    @PostMapping(value = "/upload-apk-s3")
+    public ResponseEntity<String > uploadApkS3(
+            @RequestParam(value = "file") MultipartFile file,
+            @RequestParam String uploadS3Request ) {
+
+
+        File uploadedFile = saveFileToStagingDirectory(file);
+        String baseResponse= storageService.uploadApkS3(uploadedFile, uploadS3Request);
+
+        FileUtils.deleteQuietly(uploadedFile);
+        return new ResponseEntity<>(baseResponse, HttpStatus.OK);
+    }
+
+    public static File saveFileToStagingDirectory(MultipartFile file) {
+
+        String newFilenameBase = UUID.randomUUID().toString();
+        String fileUploadDirectory = "/tmp";
+
+        String originalFileExtension = file.getOriginalFilename().substring(
+                file.getOriginalFilename().lastIndexOf(".")
+        );
+
+        String newFilename = newFilenameBase + originalFileExtension;
+
+        String storageDirectory = fileUploadDirectory;
+
+        File newFile = new File(storageDirectory + "/" + newFilename);
+
+        try {
+
+            if(!newFile.exists())
+            {
+                File parentFile = newFile.getParentFile();
+
+                if(!parentFile.isDirectory()) {
+                    parentFile.mkdirs();
+                }
+
+            }
+
+            file.transferTo(newFile);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return newFile;
     }
 
 }
